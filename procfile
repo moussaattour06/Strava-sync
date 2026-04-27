@@ -1,1 +1,1 @@
-web: uvicorn main:app --host 0.0.0.0 --port $PORT
+web: python3 -c "c=open('main.py','rb').read();open('main.py','wb').write(c.replace(b'\xc2\xa0',b' '))" && uvicorn main:app --host 0.0.0.0 --port $PORT
