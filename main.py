@@ -43,17 +43,20 @@ async def get_access_token():
 async def strava_get(path, params={}):
     token = await get_access_token()
     async with httpx.AsyncClient(timeout=30) as client:
-        r = await client.get(f"https://www.strava.com/api/v3{path}",
-            headers={"Authorization": f"Bearer {token}"}, params=params)
+        r = await client.get(
+            "https://www.strava.com/api/v3" + path,
+            headers={"Authorization": "Bearer " + token},
+            params=params
+        )
         r.raise_for_status()
         return r.json()
 
 async def sync_activity(activity_id):
-    log.info(f"Sync activité {activity_id}")
+    log.info("Sync activite " + str(activity_id))
     try:
-        a = await strava_get(f"/activities/{activity_id}", {"include_all_efforts": True})
+        a = await strava_get("/activities/" + str(activity_id), {"include_all_efforts": True})
     except Exception as e:
-        log.error(f"Erreur: {e}")
+        log.error("Erreur: " + str(e))
         return
     supabase.table("activities").upsert({
         "id": a["id"],
@@ -65,19 +68,15 @@ async def sync_activity(activity_id):
         "moving_time_s": a.get("moving_time"),
         "elapsed_time_s": a.get("elapsed_time"),
         "total_elevation_gain": a.get("total_elevation_gain"),
-        "elev_high": a.get("elev_high"),
-        "elev_low": a.get("elev_low"),
         "average_heartrate": a.get("average_heartrate"),
         "max_heartrate": a.get("max_heartrate"),
-        "has_heartrate": a.get("has_heartrate", False),
         "average_watts": a.get("average_watts"),
-        "max_watts": a.get("max_watts"),
         "suffer_score": a.get("suffer_score"),
         "pr_count": a.get("pr_count", 0),
         "calories": a.get("calories"),
         "synced_at": datetime.now(timezone.utc).isoformat(),
     }).execute()
-    log.info(f"✓ {a.get('name')} sauvegardé")
+    log.info("Sauvegarde: " + str(a.get("name")))
 
 @app.get("/webhook")
 async def webhook_challenge(hub_mode: str, hub_challenge: str, hub_verify_token: str):
@@ -98,7 +97,7 @@ async def webhook_receive(request: Request, background_tasks: BackgroundTasks):
 @app.post("/backfill")
 async def backfill(background_tasks: BackgroundTasks, pages: int = 10):
     background_tasks.add_task(_run_backfill, pages)
-    return {"status": "backfill démarré"}
+    return {"status": "backfill demarre"}
 
 async def _run_backfill(pages):
     for page in range(1, pages + 1):
